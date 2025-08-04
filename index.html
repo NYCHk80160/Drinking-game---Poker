@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>大排檔撲克遊戲</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <h1>大排檔撲克遊戲</h1>
+        <div class="game-area">
+            <div class="card-area">
+        <div class="card" id="card">
+            <div class="front"></div>
+            <div class="back"><img src="pokers image/Poker Back.jpeg" alt="Poker Back"></div>
+                </div>
+            </div>
+            <div class="info-area">
+                <button id="draw-button">抽牌</button>
+                <div id="remaining">剩餘牌數：52 (已抽：0/52)</div>
+            </div>
+        </div>
+        <div id="rule-display" class="rule-display">規則：</div>
+    </div>
+    <script src="poker_game.js"></script>
+</body>
+</html>
