@@ -2,21 +2,6 @@
 const suits = ['黑桃', '紅心', '鑽石', '梅花'];
 const ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
 
-// Emoji 對應表
-const cardEmojis = {
-    '黑桃': {
-        'A': '🂡', '2': '🂢', '3': '🂣', '4': '🂤', '5': '🂥', '6': '🂦', '7': '🂧', '8': '🂨', '9': '🂩', '10': '🂪', 'J': '🂫', 'Q': '🂭', 'K': '🂮'
-    },
-    '紅心': {
-        'A': '🂱', '2': '🂲', '3': '🂳', '4': '🂴', '5': '🂵', '6': '🂶', '7': '🂷', '8': '🂸', '9': '🂹', '10': '🂺', 'J': '🂻', 'Q': '🂽', 'K': '🂾'
-    },
-    '鑽石': {
-        'A': '🃁', '2': '🃂', '3': '🃃', '4': '🃄', '5': '🃅', '6': '🃆', '7': '🃇', '8': '🃈', '9': '🃉', '10': '🃊', 'J': '🃋', 'Q': '🃍', 'K': '🃎'
-    },
-    '梅花': {
-        'A': '🃑', '2': '🃒', '3': '🃓', '4': '🃔', '5': '🃕', '6': '🃖', '7': '🃗', '8': '🃘', '9': '🃙', '10': '🃚', 'J': '🃛', 'Q': '🃝', 'K': '🃞'
-    }
-};
 
 // 定義遊戲規則
 const rules = {
@@ -117,6 +102,7 @@ function drawCard() {
     document.getElementById('remaining').textContent = `剩餘牌數：${deck.length} (已抽：${drawnCount}/52)`;
 
     const cardElement = document.getElementById('card');
+    forceRedraw(cardElement);
     cardElement.classList.add('flipped');
 
     // 抽牌音效（如有 audio 檔可啟用）
@@ -132,3 +118,24 @@ function drawCard() {
 
 // 綁定按鈕事件
 document.getElementById('draw-button').addEventListener('click', drawCard);
+
+// 頁面載入時顯示牌背
+window.addEventListener('DOMContentLoaded', () => {
+    const cardElement = document.getElementById('card');
+    cardElement.classList.add('flipped');
+    // 立即清除動畫殘留，確保第一次抽牌速度正常
+    setTimeout(() => {
+        cardElement.style.transition = 'none';
+        cardElement.offsetHeight; // 強制重繪
+        cardElement.style.transition = '';
+    }, 10);
+});
+    // 強制重繪，確保第一次動畫速度一致
+    cardElement.style.transition = 'none';
+    void cardElement.offsetHeight;
+    cardElement.style.transition = '';
+function forceRedraw(element) {
+    element.style.transition = 'none';
+    void element.offsetHeight;
+    element.style.transition = '';
+}
