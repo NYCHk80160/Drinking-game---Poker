@@ -50,16 +50,25 @@ function shuffleDeck(deck) {
 // 初始化牌組
 let includeJoker = false;
 let allowRepeat = false;
-let deck = shuffleDeck(createDeck(includeJoker));
-let MAX_CARDS = deck.length;
+let gameDeck = shuffleDeck(createDeck(includeJoker));
+let MAX_CARDS = gameDeck.length;
 let drawnCount = 0;
 
 // 抽牌函數
 function drawCard() {
     const drawBtn = document.getElementById('draw-button');
+    const deck = document.getElementById('deck');
+    const cardElement = document.getElementById('card');
+    
     drawBtn.disabled = true;
     drawBtn.style.opacity = '0.6';
-
+    
+    // 隱藏抽出的卡片
+    cardElement.classList.remove('visible');
+    
+    // 開始抽牌動畫
+    startDrawAnimation();
+    
     // 允許重複出現時，直接隨機抽取
     let card;
     if (allowRepeat) {
@@ -68,33 +77,112 @@ function drawCard() {
         drawnCount++;
     } else {
         if (drawnCount >= MAX_CARDS) {
-            deck = shuffleDeck(createDeck(includeJoker));
+            gameDeck = shuffleDeck(createDeck(includeJoker));
             drawnCount = 0;
             alert(`已抽完 ${MAX_CARDS} 張牌，重新洗牌，遊戲繼續！`);
         }
-        if (deck.length === 0) {
-            deck = shuffleDeck(createDeck(includeJoker));
+        if (gameDeck.length === 0) {
+            gameDeck = shuffleDeck(createDeck(includeJoker));
         }
-        card = deck.pop();
+        card = gameDeck.pop();
         drawnCount++;
     }
+    
+    // 延遲顯示卡片內容，等待抽牌動畫完成
+    setTimeout(() => {
+        displayCard(card);
+        
+        // 觸發洗牌動畫
+        setTimeout(() => {
+            shuffleAnimation();
+        }, 200);
+        
+        // 更新剩餘牌數顯示
+        document.getElementById('remaining').textContent = allowRepeat
+            ? `已抽：${drawnCount}`
+            : `剩餘牌數：${gameDeck.length} (已抽：${drawnCount}/${MAX_CARDS})`;
+            
+        // 恢復按鈕狀態
+        setTimeout(() => {
+            drawBtn.disabled = false;
+            drawBtn.style.opacity = '1';
+        }, 300);
+        
+    }, 600); // 減少等待時間，配合更快的動畫
+}
+
+// 開始抽牌動畫
+function startDrawAnimation() {
+    const deckCards = document.querySelectorAll('.deck-card');
+    const topCard = deckCards[0]; // 最上層的牌
+    
+    if (topCard) {
+        // 添加輕微的卡頓效果
+        topCard.style.transform = 'translateY(-2px)';
+        
+        setTimeout(() => {
+            topCard.classList.add('drawing');
+            
+            // 這裡可以添加摩擦音效
+            // playSound('cardDraw');
+            
+        }, 80); // 加快卡頓恢復速度
+        
+        // 動畫完成後移除該牌並補充新牌
+        setTimeout(() => {
+            topCard.remove();
+            
+            // 重新排列剩餘牌的z-index並添加新牌保持連續性
+            const remainingCards = document.querySelectorAll('.deck-card');
+            const deck = document.getElementById('deck');
+            
+            // 重新排列現有牌
+            remainingCards.forEach((card, index) => {
+                card.style.zIndex = remainingCards.length - index;
+                card.className = `deck-card deck-card-${index + 1}`;
+                // 更新位置
+                card.style.top = `${-2 * index}px`;
+                card.style.left = `${index}px`;
+            });
+            
+            // 如果牌數少於3張，添加新牌保持視覺連續性
+            if (remainingCards.length < 3) {
+                const newCard = document.createElement('div');
+                newCard.className = `deck-card deck-card-${remainingCards.length + 1}`;
+                newCard.style.top = `${-2 * remainingCards.length}px`;
+                newCard.style.left = `${remainingCards.length}px`;
+                newCard.style.zIndex = 1;
+                
+                // 添加入場動畫
+                newCard.style.opacity = '0';
+                newCard.style.transform = 'scale(0.9)';
+                deck.appendChild(newCard);
+                
+                setTimeout(() => {
+                    newCard.style.transition = 'all 0.3s ease';
+                    newCard.style.opacity = '1';
+                    newCard.style.transform = 'scale(1)';
+                }, 50);
+            }
+            
+        }, 800); // 配合更快的動畫時間
+    }
+}
+
+// 顯示抽出的卡片
+function displayCard(card) {
+    const cardElement = document.getElementById('card');
+    const front = document.querySelector('.front');
     const rank = card.rank;
     let rule = rules[rank];
     if (rank === 'Joker1' || rank === 'Joker2') rule = '免飲一杯';
 
-    const front = document.querySelector('.front');
     front.textContent = '';
     front.style.color = '#3b3b6d';
 
-    // 抽牌閃爍動畫
-    front.animate([
-        { opacity: 0.2 },
-        { opacity: 1 }
-    ], {
-        duration: 180,
-        easing: 'ease-in'
-    });
-
+    // 顯示卡片並翻轉
+    cardElement.classList.add('visible');
+    
     setTimeout(() => {
         // 以相片取代 emoji
         if (card.suit === 'Joker') {
@@ -109,22 +197,61 @@ function drawCard() {
             let imgName = `${suitMap[card.suit]} ${rank}.jpeg`;
             front.innerHTML = `<img src="pokers image/${imgName}" alt="${imgName}" style="width:90px;height:130px;object-fit:contain;border-radius:10px;box-shadow:0 2px 8px rgba(60,60,120,0.12);">`;
         }
-    }, 180);
+        
+        // 翻牌動畫
+        cardElement.classList.remove('flipped');
+        
+    }, 200);
 
     document.getElementById('rule-display').textContent = `規則：${rule}`;
-    document.getElementById('remaining').textContent = allowRepeat
-        ? `已抽：${drawnCount}`
-        : `剩餘牌數：${deck.length} (已抽：${drawnCount}/${MAX_CARDS})`;
+}
 
-    const cardElement = document.getElementById('card');
-    forceRedraw(cardElement);
-    cardElement.classList.add('flipped');
-
+// 洗牌動畫
+function shuffleAnimation() {
+    const deck = document.getElementById('deck');
+    deck.classList.add('shuffling');
+    
+    // 這裡可以添加洗牌音效
+    // playSound('cardShuffle');
+    
     setTimeout(() => {
-        cardElement.classList.remove('flipped');
-        drawBtn.disabled = false;
-        drawBtn.style.opacity = '1';
-    }, 900);
+        deck.classList.remove('shuffling');
+    }, 850); // 增加洗牌動畫時間，讓效果更明顯
+}
+
+// 音效播放函數（預留接口）
+function playSound(soundType) {
+    // 可以在這裡添加音效播放邏輯
+    // 例如：
+    // const audio = new Audio(`sounds/${soundType}.mp3`);
+    // audio.play().catch(e => console.log('Audio play failed:', e));
+}
+
+// 創建牌堆卡片
+function createDeckCards() {
+    const deck = document.getElementById('deck');
+    deck.innerHTML = '';
+    
+    // 確保總是創建5張牌的視覺效果
+    for (let i = 1; i <= 5; i++) {
+        const deckCard = document.createElement('div');
+        deckCard.className = `deck-card deck-card-${i}`;
+        deckCard.style.top = `${-2 * (i - 1)}px`;
+        deckCard.style.left = `${i - 1}px`;
+        deckCard.style.zIndex = 6 - i;
+        
+        // 添加入場動畫
+        deckCard.style.opacity = '0';
+        deckCard.style.transform = 'scale(0.95)';
+        deck.appendChild(deckCard);
+        
+        // 錯開入場時間
+        setTimeout(() => {
+            deckCard.style.transition = 'all 0.3s ease';
+            deckCard.style.opacity = '1';
+            deckCard.style.transform = 'scale(1)';
+        }, i * 50);
+    }
 }
 
 // 綁定按鈕事件
@@ -138,34 +265,47 @@ document.getElementById('end-button').addEventListener('click', function() {
 // 頁面載入時顯示牌背
 window.addEventListener('DOMContentLoaded', () => {
     const cardElement = document.getElementById('card');
+    
+    // 初始化牌堆
+    createDeckCards();
+    
+    // 初始卡片狀態
     cardElement.classList.add('flipped');
     setTimeout(() => {
         cardElement.style.transition = 'none';
         cardElement.offsetHeight;
         cardElement.style.transition = '';
     }, 10);
+    
     // 設定區事件
     document.getElementById('joker-setting').addEventListener('change', function(e) {
         includeJoker = e.target.checked;
-        deck = shuffleDeck(createDeck(includeJoker));
-        MAX_CARDS = deck.length;
+        gameDeck = shuffleDeck(createDeck(includeJoker));
+        MAX_CARDS = gameDeck.length;
         drawnCount = 0;
-        document.getElementById('remaining').textContent = `剩餘牌數：${deck.length} (已抽：${drawnCount}/${MAX_CARDS})`;
+        
+        // 重新創建牌堆
+        createDeckCards();
+        
+        document.getElementById('remaining').textContent = `剩餘牌數：${gameDeck.length} (已抽：${drawnCount}/${MAX_CARDS})`;
     });
+    
     document.getElementById('repeat-setting').addEventListener('change', function(e) {
         allowRepeat = e.target.checked;
-        deck = shuffleDeck(createDeck(includeJoker));
-        MAX_CARDS = deck.length;
+        gameDeck = shuffleDeck(createDeck(includeJoker));
+        MAX_CARDS = gameDeck.length;
         drawnCount = 0;
+        
+        // 重新創建牌堆
+        createDeckCards();
+        
         document.getElementById('remaining').textContent = allowRepeat
             ? `已抽：${drawnCount}`
-            : `剩餘牌數：${deck.length} (已抽：${drawnCount}/${MAX_CARDS})`;
+            : `剩餘牌數：${gameDeck.length} (已抽：${drawnCount}/${MAX_CARDS})`;
     });
 });
-    // 強制重繪，確保第一次動畫速度一致
-    cardElement.style.transition = 'none';
-    void cardElement.offsetHeight;
-    cardElement.style.transition = '';
+
+// 強制重繪函數
 function forceRedraw(element) {
     element.style.transition = 'none';
     void element.offsetHeight;
