@@ -3,22 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Online 酒Game 大排檔</title>
+    <title>Online drinkinggame poker</title>
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@700&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="container">
-        <h1>酒Game 大排檔</h1>
+        <h1>酒game 大排檔</h1>
         <div class="game-area">
             <div class="info-area">
+                <!-- 遊戲設定區 -->
+                <div class="settings-area">
+                    <label class="setting-label">
+                        <input type="checkbox" id="joker-setting"> 加入大小王 (Joker)
+                    </label>
+                    <label class="setting-label">
+                        <input type="checkbox" id="repeat-setting"> 卡牌可重複出現
+                    </label>
+                </div>
                 <div class="card-area">
                     <div class="card flipped" id="card" data-loaded="false">
                         <div class="front"></div>
                         <div class="back"><img src="pokers image/Poker Back.jpeg" alt="Poker Back"></div>
                     </div>
                 </div>
-                <button id="draw-button">抽牌</button>
+                <div class="button-area">
+                    <button id="draw-button">抽牌</button>
+                    <button id="end-button">結束遊戲</button>
+                </div>
                 <div id="remaining">剩餘牌數：52 (已抽：0/52)</div>
             </div>
         </div>
