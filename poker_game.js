@@ -169,6 +169,7 @@ function startDrawAnimation() {
     }
 }
 
+
 // 顯示抽出的卡片
 function displayCard(card) {
     const cardElement = document.getElementById('card');
