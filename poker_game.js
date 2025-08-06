@@ -73,7 +73,7 @@ const rules = {
     'A': '指個一人飲',
     '2': '陪飲員 (無論邊個玩家要飲，陪飲員都要同佢一齊飲，直到下一個人抽到2為止)',
     '3': '大細波 (玩家用手做出大波嘅動作，要講「細波」，相反做出細波嘅動作，就要講「大波」，做錯嘅玩家飲一啖)',
-    '4': '開規矩 (自定一個規則，遊戲期間犯規嘅玩家就要飲一啖。之後抽到4嘅玩家可以繼續開新嘅規矩/取消之前嘅規矩)',
+    '4': '開規矩 (自定一個規則，遊戲期間犯規嘅玩家就要飲一啖。之後抽到4嘅玩家可以繼續開新嘅規則/取消之前嘅規則)',
     '5': '圍枚',
     '6': '開topic (自定一個Topic話題，玩家輪流回答，講唔出或者講重複就要飲一啖)',
     '7': '拍7 (玩家隨機講一個數字，其餘玩家順次序報數，當有7或者係7嘅倍數嘅數字出現就要用拍手代替，並且輪翻到上家繼續嗌。數字7或者7嘅倍數冇拍手嘅玩家，飲一啖)',
@@ -84,40 +84,6 @@ const rules = {
     'Q': '下家飲',
     'K': '自己飲'
 };
-
-// 音效系統
-const soundEffects = {
-    draw: new Audio('sounds/draw.mp3'),
-    start: new Audio('sounds/start.mp3'),
-    isMuted: false
-};
-
-// 預加載音效
-function preloadSounds() {
-    Object.values(soundEffects).forEach(audio => {
-        if (audio instanceof Audio) {
-            audio.load();
-            audio.volume = 0.7; // 設定適中音量
-        }
-    });
-}
-
-// 播放音效函數
-function playSound(soundName) {
-    if (soundEffects.isMuted || !soundEffects[soundName]) return;
-    
-    try {
-        // 重置音效以便重複播放
-        soundEffects[soundName].currentTime = 0;
-        
-        // 播放音效
-        soundEffects[soundName].play().catch(error => {
-            console.log(`Sound play failed: ${error.message}`);
-        });
-    } catch (error) {
-        console.log(`Error playing sound: ${error.message}`);
-    }
-}
 
 // 生成一副牌
 function createDeck(includeJoker = false) {
@@ -176,9 +142,6 @@ function drawCard() {
     
     isDrawing = true;
     
-    // 播放抽牌音效
-    playSound('draw');
-    
     if (!domCache.drawBtn) {
         domCache.drawBtn = document.getElementById('draw-button');
         domCache.deck = document.getElementById('deck');
@@ -216,6 +179,7 @@ function drawCard() {
     // 延遲顯示卡片內容，等待抽牌動畫完成
     setTimeout(() => {
         displayCard(card);
+        if (soundEnabled) sounds.draw.play();
         
         // 觸發洗牌動畫
         setTimeout(() => {
@@ -342,6 +306,7 @@ function displayCard(card) {
         
         // 翻牌動畫
         domCache.cardElement.classList.remove('flipped');
+        if (soundEnabled) sounds.flip.play();
         
     }, 200);
 
@@ -353,7 +318,7 @@ function shuffleAnimation() {
     if (!domCache.deck) {
         domCache.deck = document.getElementById('deck');
     }
-    
+    if (soundEnabled) sounds.shuffle.play();
     domCache.deck.classList.add('shuffling');
     
     setTimeout(() => {
@@ -400,6 +365,24 @@ function createDeckCards() {
     }
 }
 
+// Audio effects setup
+const audioFiles = {
+    shuffle: 'sounds/shuffle.mp3',
+    draw:    'sounds/draw.mp3',
+    flip:    'sounds/flip.mp3',
+    end:     'sounds/end.mp3'
+};
+const sounds = {};
+let soundEnabled = true;
+
+function preloadSounds() {
+    for (const key in audioFiles) {
+        const a = new Audio(audioFiles[key]);
+        a.load();
+        sounds[key] = a;
+    }
+}
+
 // 初始化DOM元素緩存
 function initializeDomCache() {
     domCache.drawBtn = document.getElementById('draw-button');
@@ -411,6 +394,7 @@ function initializeDomCache() {
     domCache.front = document.querySelector('.front');
     domCache.remaining = document.getElementById('remaining');
     domCache.ruleDisplay = document.getElementById('rule-display');
+    domCache.soundToggle = document.getElementById('sound-toggle');
 }
 
 // 頁面載入時執行
@@ -422,18 +406,19 @@ window.addEventListener('DOMContentLoaded', () => {
     initializeDeck();
     createDeckCards();
     
-    // 預加載常用卡片圖片和音效
+    // 預加載常用卡片圖片
     preloadCardImages();
     preloadSounds();
-    
-    // 播放開始遊戲音效
-    playSound('start');
-    
-    // 初始卡片狀態
-    domCache.cardElement.classList.add('flipped');
-    setTimeout(() => {
-        forceRedraw(domCache.cardElement);
-    }, 10);
+    domCache.soundToggle.addEventListener('change', e => {
+        soundEnabled = e.target.checked;
+    });
+    // end-button click (add end sound)
+    domCache.endBtn.addEventListener('click', function() {
+        if (soundEnabled) sounds.end.play();
+        if (confirm('確定要結束遊戲嗎？')) {
+            location.reload();
+        }
+    });
     
     // 設定區事件
     domCache.jokerSetting.addEventListener('change', function(e) {
@@ -450,53 +435,6 @@ window.addEventListener('DOMContentLoaded', () => {
     
     // 綁定按鈕事件 - 使用事件委託
     domCache.drawBtn.addEventListener('click', drawCard);
-    domCache.endBtn.addEventListener('click', function() {
-        if (confirm('確定要結束遊戲嗎？')) {
-            location.reload();
-        }
-    });
-});
-
-// 創建音效控制按鈕
-function createSoundControls() {
-    const soundBtn = document.createElement('button');
-    soundBtn.id = 'sound-toggle';
-    soundBtn.className = 'sound-button';
-    soundBtn.innerHTML = '🔊';
-    soundBtn.title = '切換音效';
-    soundBtn.style.position = 'absolute';
-    soundBtn.style.top = '10px';
-    soundBtn.style.right = '10px';
-    soundBtn.style.background = 'rgba(255, 255, 255, 0.7)';
-    soundBtn.style.border = '1px solid #6366f1';
-    soundBtn.style.borderRadius = '50%';
-    soundBtn.style.width = '32px';
-    soundBtn.style.height = '32px';
-    soundBtn.style.fontSize = '16px';
-    soundBtn.style.cursor = 'pointer';
-    soundBtn.style.zIndex = '100';
-    
-    soundBtn.addEventListener('click', function() {
-        soundEffects.isMuted = !soundEffects.isMuted;
-        soundBtn.innerHTML = soundEffects.isMuted ? '🔇' : '🔊';
-        
-        // 提示音效狀態
-        if (!soundEffects.isMuted) {
-            // 播放短暫的音效來確認開啟
-            playSound('start');
-        }
-    });
-    
-    document.querySelector('.container').appendChild(soundBtn);
-}
-
-// 初始化音效控制
-window.addEventListener('DOMContentLoaded', function() {
-    // 檢查是否支援音效
-    const audioTest = document.createElement('audio');
-    if (audioTest.canPlayType) {
-        createSoundControls();
-    }
 });
 
 // 強制重繪函數
