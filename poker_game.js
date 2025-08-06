@@ -6,6 +6,67 @@ const jokers = [
     { suit: 'Joker', rank: 'Joker2', img: 'Joker 2.jpeg' }
 ];
 
+// Cache DOM elements for better performance
+const domCache = {};
+
+// Image preloading system
+const imageCache = {};
+
+// Preload card images to improve performance
+function preloadCardImages() {
+    const suitMap = {
+        '黑桃': 'Spades',
+        '紅心': 'Heart',
+        '鑽石': 'Diamond',
+        '梅花': 'Clubs'
+    };
+    
+    // Create a queue of images to preload
+    const imagesToPreload = [];
+    
+    // Add jokers
+    jokers.forEach(joker => {
+        imagesToPreload.push(`pokers image/${joker.img}`);
+    });
+    
+    // Add regular cards (first 10 only for initial loading)
+    let count = 0;
+    for (const suit of suits) {
+        for (const rank of ranks) {
+            if (count < 10) { // Limit initial preloading
+                imagesToPreload.push(`pokers image/${suitMap[suit]} ${rank}.jpeg`);
+                count++;
+            }
+        }
+    }
+    
+    // Preload the images in the background
+    requestIdleCallback(() => {
+        imagesToPreload.forEach(src => {
+            if (!imageCache[src]) {
+                const img = new Image();
+                img.src = src;
+                imageCache[src] = img;
+            }
+        });
+    }, { timeout: 1000 });
+    
+    // Preload remaining images after a delay
+    setTimeout(() => {
+        requestIdleCallback(() => {
+            for (const suit of suits) {
+                for (const rank of ranks) {
+                    const src = `pokers image/${suitMap[suit]} ${rank}.jpeg`;
+                    if (!imageCache[src]) {
+                        const img = new Image();
+                        img.src = src;
+                        imageCache[src] = img;
+                    }
+                }
+            }
+        }, { timeout: 2000 });
+    }, 3000);
+}
 
 // 定義遊戲規則
 const rules = {
@@ -24,6 +85,40 @@ const rules = {
     'K': '自己飲'
 };
 
+// 音效系統
+const soundEffects = {
+    draw: new Audio('sounds/draw.mp3'),
+    start: new Audio('sounds/start.mp3'),
+    isMuted: false
+};
+
+// 預加載音效
+function preloadSounds() {
+    Object.values(soundEffects).forEach(audio => {
+        if (audio instanceof Audio) {
+            audio.load();
+            audio.volume = 0.7; // 設定適中音量
+        }
+    });
+}
+
+// 播放音效函數
+function playSound(soundName) {
+    if (soundEffects.isMuted || !soundEffects[soundName]) return;
+    
+    try {
+        // 重置音效以便重複播放
+        soundEffects[soundName].currentTime = 0;
+        
+        // 播放音效
+        soundEffects[soundName].play().catch(error => {
+            console.log(`Sound play failed: ${error.message}`);
+        });
+    } catch (error) {
+        console.log(`Error playing sound: ${error.message}`);
+    }
+}
+
 // 生成一副牌
 function createDeck(includeJoker = false) {
     let deck = [];
@@ -38,38 +133,68 @@ function createDeck(includeJoker = false) {
     return deck;
 }
 
-// 洗牌函數
+// 洗牌函數 - Fisher-Yates shuffle algorithm (optimized)
 function shuffleDeck(deck) {
-    for (let i = deck.length - 1; i > 0; i--) {
+    const newDeck = [...deck]; // Create a copy to avoid modifying the original
+    for (let i = newDeck.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
-        [deck[i], deck[j]] = [deck[j], deck[i]];
+        [newDeck[i], newDeck[j]] = [newDeck[j], newDeck[i]];
     }
-    return deck;
+    return newDeck;
 }
 
 // 初始化牌組
 let includeJoker = false;
 let allowRepeat = false;
-let gameDeck = shuffleDeck(createDeck(includeJoker));
-let MAX_CARDS = gameDeck.length;
+let gameDeck = [];
+let MAX_CARDS = 0;
 let drawnCount = 0;
 
-// 抽牌函數
-function drawCard() {
-    const drawBtn = document.getElementById('draw-button');
-    const deck = document.getElementById('deck');
-    const cardElement = document.getElementById('card');
+// Initialize deck - moved to a function for better organization
+function initializeDeck() {
+    gameDeck = shuffleDeck(createDeck(includeJoker));
+    MAX_CARDS = gameDeck.length;
+    drawnCount = 0;
+    updateRemainingDisplay();
+}
+
+// Update remaining display - extracted to a function to avoid code duplication
+function updateRemainingDisplay() {
+    if (!domCache.remaining) {
+        domCache.remaining = document.getElementById('remaining');
+    }
     
-    drawBtn.disabled = true;
-    drawBtn.style.opacity = '0.6';
+    domCache.remaining.textContent = allowRepeat
+        ? `已抽：${drawnCount}`
+        : `剩餘牌數：${gameDeck.length} (已抽：${drawnCount}/${MAX_CARDS})`;
+}
+
+// 抽牌函數 - debounced to prevent rapid clicks
+let isDrawing = false;
+function drawCard() {
+    if (isDrawing) return;
+    
+    isDrawing = true;
+    
+    // 播放抽牌音效
+    playSound('draw');
+    
+    if (!domCache.drawBtn) {
+        domCache.drawBtn = document.getElementById('draw-button');
+        domCache.deck = document.getElementById('deck');
+        domCache.cardElement = document.getElementById('card');
+    }
+    
+    domCache.drawBtn.disabled = true;
+    domCache.drawBtn.style.opacity = '0.6';
     
     // 隱藏抽出的卡片
-    cardElement.classList.remove('visible');
+    domCache.cardElement.classList.remove('visible');
     
     // 開始抽牌動畫
     startDrawAnimation();
     
-    // 允許重複出現時，直接隨機抽取
+    // 抽牌邏輯
     let card;
     if (allowRepeat) {
         const allDeck = createDeck(includeJoker);
@@ -95,20 +220,20 @@ function drawCard() {
         // 觸發洗牌動畫
         setTimeout(() => {
             shuffleAnimation();
+            
+            // 恢復按鈕狀態 - 調整至與動畫完成時間一致 (800ms 後)
+            setTimeout(() => {
+                domCache.drawBtn.disabled = false;
+                domCache.drawBtn.style.opacity = '1';
+                isDrawing = false;
+            }, 850); // 使用 850ms 確保動畫完全結束後才啟用按鈕
+            
         }, 200);
         
         // 更新剩餘牌數顯示
-        document.getElementById('remaining').textContent = allowRepeat
-            ? `已抽：${drawnCount}`
-            : `剩餘牌數：${gameDeck.length} (已抽：${drawnCount}/${MAX_CARDS})`;
+        updateRemainingDisplay();
             
-        // 恢復按鈕狀態
-        setTimeout(() => {
-            drawBtn.disabled = false;
-            drawBtn.style.opacity = '1';
-        }, 300);
-        
-    }, 600); // 減少等待時間，配合更快的動畫
+    }, 600);
 }
 
 // 開始抽牌動畫
@@ -122,11 +247,7 @@ function startDrawAnimation() {
         
         setTimeout(() => {
             topCard.classList.add('drawing');
-            
-            // 這裡可以添加摩擦音效
-            // playSound('cardDraw');
-            
-        }, 80); // 加快卡頓恢復速度
+        }, 80);
         
         // 動畫完成後移除該牌並補充新牌
         setTimeout(() => {
@@ -134,7 +255,7 @@ function startDrawAnimation() {
             
             // 重新排列剩餘牌的z-index並添加新牌保持連續性
             const remainingCards = document.querySelectorAll('.deck-card');
-            const deck = document.getElementById('deck');
+            const deck = domCache.deck || document.getElementById('deck');
             
             // 重新排列現有牌
             remainingCards.forEach((card, index) => {
@@ -165,29 +286,33 @@ function startDrawAnimation() {
                 }, 50);
             }
             
-        }, 800); // 配合更快的動畫時間
+        }, 800);
     }
 }
 
-
-// 顯示抽出的卡片
+// 使用圖片緩存系統顯示卡片
 function displayCard(card) {
-    const cardElement = document.getElementById('card');
-    const front = document.querySelector('.front');
+    if (!domCache.cardElement) {
+        domCache.cardElement = document.getElementById('card');
+        domCache.front = document.querySelector('.front');
+        domCache.ruleDisplay = document.getElementById('rule-display');
+    }
+    
     const rank = card.rank;
     let rule = rules[rank];
     if (rank === 'Joker1' || rank === 'Joker2') rule = '免飲一杯';
 
-    front.textContent = '';
-    front.style.color = '#3b3b6d';
+    domCache.front.textContent = '';
+    domCache.front.style.color = '#3b3b6d';
 
     // 顯示卡片並翻轉
-    cardElement.classList.add('visible');
+    domCache.cardElement.classList.add('visible');
     
     setTimeout(() => {
         // 以相片取代 emoji
+        let imgSrc;
         if (card.suit === 'Joker') {
-            front.innerHTML = `<img src="pokers image/${card.img}" alt="Joker" style="width:90px;height:130px;object-fit:contain;border-radius:10px;box-shadow:0 2px 8px rgba(60,60,120,0.12);">`;
+            imgSrc = `pokers image/${card.img}`;
         } else {
             const suitMap = {
                 '黑桃': 'Spades',
@@ -195,43 +320,57 @@ function displayCard(card) {
                 '鑽石': 'Diamond',
                 '梅花': 'Clubs'
             };
-            let imgName = `${suitMap[card.suit]} ${rank}.jpeg`;
-            front.innerHTML = `<img src="pokers image/${imgName}" alt="${imgName}" style="width:90px;height:130px;object-fit:contain;border-radius:10px;box-shadow:0 2px 8px rgba(60,60,120,0.12);">`;
+            imgSrc = `pokers image/${suitMap[card.suit]} ${rank}.jpeg`;
         }
         
+        // 使用已緩存的圖片或創建新的圖片元素
+        const imgEl = document.createElement('img');
+        imgEl.alt = card.suit + ' ' + rank;
+        imgEl.style = "width:90px;height:130px;object-fit:contain;border-radius:10px;box-shadow:0 2px 8px rgba(60,60,120,0.12);";
+        imgEl.src = imgSrc;
+        
+        // 如果已經預加載過這張圖片，使用緩存版本
+        if (imageCache[imgSrc]) {
+            imgEl.src = imageCache[imgSrc].src;
+        } else {
+            // 否則將這張圖片加入緩存
+            imageCache[imgSrc] = imgEl;
+        }
+        
+        domCache.front.innerHTML = '';
+        domCache.front.appendChild(imgEl);
+        
         // 翻牌動畫
-        cardElement.classList.remove('flipped');
+        domCache.cardElement.classList.remove('flipped');
         
     }, 200);
 
-    document.getElementById('rule-display').textContent = `規則：${rule}`;
+    domCache.ruleDisplay.textContent = `規則：${rule}`;
 }
 
 // 洗牌動畫
 function shuffleAnimation() {
-    const deck = document.getElementById('deck');
-    deck.classList.add('shuffling');
+    if (!domCache.deck) {
+        domCache.deck = document.getElementById('deck');
+    }
     
-    // 這裡可以添加洗牌音效
-    // playSound('cardShuffle');
+    domCache.deck.classList.add('shuffling');
     
     setTimeout(() => {
-        deck.classList.remove('shuffling');
-    }, 850); // 增加洗牌動畫時間，讓效果更明顯
-}
-
-// 音效播放函數（預留接口）
-function playSound(soundType) {
-    // 可以在這裡添加音效播放邏輯
-    // 例如：
-    // const audio = new Audio(`sounds/${soundType}.mp3`);
-    // audio.play().catch(e => console.log('Audio play failed:', e));
+        domCache.deck.classList.remove('shuffling');
+    }, 850);
 }
 
 // 創建牌堆卡片
 function createDeckCards() {
-    const deck = document.getElementById('deck');
-    deck.innerHTML = '';
+    if (!domCache.deck) {
+        domCache.deck = document.getElementById('deck');
+    }
+    
+    domCache.deck.innerHTML = '';
+    
+    // 使用DocumentFragment提高性能
+    const fragment = document.createDocumentFragment();
     
     // 確保總是創建5張牌的視覺效果
     for (let i = 1; i <= 5; i++) {
@@ -244,9 +383,15 @@ function createDeckCards() {
         // 添加入場動畫
         deckCard.style.opacity = '0';
         deckCard.style.transform = 'scale(0.95)';
-        deck.appendChild(deckCard);
-        
-        // 錯開入場時間
+        fragment.appendChild(deckCard);
+    }
+    
+    // 一次性將所有卡片添加到DOM
+    domCache.deck.appendChild(fragment);
+    
+    // 錯開入場時間
+    for (let i = 1; i <= 5; i++) {
+        const deckCard = domCache.deck.querySelector(`.deck-card-${i}`);
         setTimeout(() => {
             deckCard.style.transition = 'all 0.3s ease';
             deckCard.style.opacity = '1';
@@ -255,55 +400,103 @@ function createDeckCards() {
     }
 }
 
-// 綁定按鈕事件
-document.getElementById('draw-button').addEventListener('click', drawCard);
-document.getElementById('end-button').addEventListener('click', function() {
-    if (confirm('確定要結束遊戲嗎？')) {
-        location.reload();
-    }
-});
+// 初始化DOM元素緩存
+function initializeDomCache() {
+    domCache.drawBtn = document.getElementById('draw-button');
+    domCache.endBtn = document.getElementById('end-button');
+    domCache.jokerSetting = document.getElementById('joker-setting');
+    domCache.repeatSetting = document.getElementById('repeat-setting');
+    domCache.cardElement = document.getElementById('card');
+    domCache.deck = document.getElementById('deck');
+    domCache.front = document.querySelector('.front');
+    domCache.remaining = document.getElementById('remaining');
+    domCache.ruleDisplay = document.getElementById('rule-display');
+}
 
-// 頁面載入時顯示牌背
+// 頁面載入時執行
 window.addEventListener('DOMContentLoaded', () => {
-    const cardElement = document.getElementById('card');
+    // 初始化DOM緩存
+    initializeDomCache();
     
-    // 初始化牌堆
+    // 初始化牌組
+    initializeDeck();
     createDeckCards();
     
+    // 預加載常用卡片圖片和音效
+    preloadCardImages();
+    preloadSounds();
+    
+    // 播放開始遊戲音效
+    playSound('start');
+    
     // 初始卡片狀態
-    cardElement.classList.add('flipped');
+    domCache.cardElement.classList.add('flipped');
     setTimeout(() => {
-        cardElement.style.transition = 'none';
-        cardElement.offsetHeight;
-        cardElement.style.transition = '';
+        forceRedraw(domCache.cardElement);
     }, 10);
     
     // 設定區事件
-    document.getElementById('joker-setting').addEventListener('change', function(e) {
+    domCache.jokerSetting.addEventListener('change', function(e) {
         includeJoker = e.target.checked;
-        gameDeck = shuffleDeck(createDeck(includeJoker));
-        MAX_CARDS = gameDeck.length;
-        drawnCount = 0;
-        
-        // 重新創建牌堆
+        initializeDeck();
         createDeckCards();
-        
-        document.getElementById('remaining').textContent = `剩餘牌數：${gameDeck.length} (已抽：${drawnCount}/${MAX_CARDS})`;
     });
     
-    document.getElementById('repeat-setting').addEventListener('change', function(e) {
+    domCache.repeatSetting.addEventListener('change', function(e) {
         allowRepeat = e.target.checked;
-        gameDeck = shuffleDeck(createDeck(includeJoker));
-        MAX_CARDS = gameDeck.length;
-        drawnCount = 0;
-        
-        // 重新創建牌堆
+        initializeDeck();
         createDeckCards();
-        
-        document.getElementById('remaining').textContent = allowRepeat
-            ? `已抽：${drawnCount}`
-            : `剩餘牌數：${gameDeck.length} (已抽：${drawnCount}/${MAX_CARDS})`;
     });
+    
+    // 綁定按鈕事件 - 使用事件委託
+    domCache.drawBtn.addEventListener('click', drawCard);
+    domCache.endBtn.addEventListener('click', function() {
+        if (confirm('確定要結束遊戲嗎？')) {
+            location.reload();
+        }
+    });
+});
+
+// 創建音效控制按鈕
+function createSoundControls() {
+    const soundBtn = document.createElement('button');
+    soundBtn.id = 'sound-toggle';
+    soundBtn.className = 'sound-button';
+    soundBtn.innerHTML = '🔊';
+    soundBtn.title = '切換音效';
+    soundBtn.style.position = 'absolute';
+    soundBtn.style.top = '10px';
+    soundBtn.style.right = '10px';
+    soundBtn.style.background = 'rgba(255, 255, 255, 0.7)';
+    soundBtn.style.border = '1px solid #6366f1';
+    soundBtn.style.borderRadius = '50%';
+    soundBtn.style.width = '32px';
+    soundBtn.style.height = '32px';
+    soundBtn.style.fontSize = '16px';
+    soundBtn.style.cursor = 'pointer';
+    soundBtn.style.zIndex = '100';
+    
+    soundBtn.addEventListener('click', function() {
+        soundEffects.isMuted = !soundEffects.isMuted;
+        soundBtn.innerHTML = soundEffects.isMuted ? '🔇' : '🔊';
+        
+        // 提示音效狀態
+        if (!soundEffects.isMuted) {
+            // 播放短暫的音效來確認開啟
+            playSound('start');
+        }
+    });
+    
+    document.querySelector('.container').appendChild(soundBtn);
+}
+
+// 初始化音效控制
+window.addEventListener('DOMContentLoaded', function() {
+    // 檢查是否支援音效
+    const audioTest = document.createElement('audio');
+    if (audioTest.canPlayType) {
+        createSoundControls();
+    }
 });
 
 // 強制重繪函數
@@ -311,4 +504,19 @@ function forceRedraw(element) {
     element.style.transition = 'none';
     void element.offsetHeight;
     element.style.transition = '';
+}
+
+// Polyfill for requestIdleCallback
+if (!window.requestIdleCallback) {
+    window.requestIdleCallback = function(callback, options) {
+        const start = Date.now();
+        return setTimeout(function() {
+            callback({
+                didTimeout: false,
+                timeRemaining: function() {
+                    return Math.max(0, 50 - (Date.now() - start));
+                }
+            });
+        }, options?.timeout || 1);
+    };
 }
