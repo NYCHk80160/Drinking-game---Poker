@@ -1,22 +1,22 @@
 /**
- * Image Preload Manager
+ * 🎴 Image Preload Manager
  * 
- * A utility for efficiently preloading and caching images for the poker game
+ * Efficiently preloads and caches images for smoother gameplay.
  */
 
 class PreloadManager {
     constructor() {
-        this.imageCache = {};
+        this.imageCache = {};     // 快取已載入的圖片
         this.isPreloading = false;
-        this.queue = [];
-        this.processed = 0;
-        this.total = 0;
+        this.queue = [];          // 等待載入的圖片清單
+        this.processed = 0;       // 已處理的圖片數
+        this.total = 0;           // 總共要處理的圖片數
     }
 
     /**
-     * Preload a single image and store in cache
-     * @param {string} src - Image source URL
-     * @returns {Promise} - Promise that resolves when image is loaded
+     * 📦 預載單張圖片並存入快取
+     * @param {string} src - 圖片 URL
+     * @returns {Promise<HTMLImageElement>}
      */
     preloadImage(src) {
         if (this.imageCache[src]) {
@@ -32,15 +32,15 @@ class PreloadManager {
             };
             img.onerror = () => {
                 this.processed++;
-                reject(new Error(`Failed to load image: ${src}`));
+                reject(new Error(`❌ Failed to load image: ${src}`));
             };
             img.src = src;
         });
     }
 
     /**
-     * Add images to the preload queue
-     * @param {Array<string>} images - Array of image URLs to preload
+     * 📋 加入圖片至預載佇列
+     * @param {Array<string>} images - 圖片 URL 陣列
      */
     addToQueue(images) {
         this.queue = [...this.queue, ...images];
@@ -48,13 +48,11 @@ class PreloadManager {
     }
 
     /**
-     * Process the preload queue during browser idle time
-     * @param {number} chunkSize - Number of images to load per idle callback
+     * 🕒 使用 requestIdleCallback 分批處理預載佇列
+     * @param {number} chunkSize - 每次 idle callback 處理的圖片數
      */
     processQueue(chunkSize = 3) {
-        if (this.isPreloading || this.queue.length === 0) {
-            return;
-        }
+        if (this.isPreloading || this.queue.length === 0) return;
 
         this.isPreloading = true;
 
@@ -68,7 +66,7 @@ class PreloadManager {
                 requestIdleCallback(processChunk, { timeout: 1000 });
             } else {
                 this.isPreloading = false;
-                console.log(`Preloading complete: ${this.processed}/${this.total} images loaded`);
+                console.log(`✅ Preloading complete: ${this.processed}/${this.total} images loaded`);
             }
         };
 
@@ -76,26 +74,24 @@ class PreloadManager {
     }
 
     /**
-     * Get an image from the cache if available
-     * @param {string} src - Image source URL
-     * @returns {HTMLImageElement|null} - Cached image or null
+     * 🔍 從快取中取得圖片
+     * @param {string} src
+     * @returns {HTMLImageElement|null}
      */
     getFromCache(src) {
         return this.imageCache[src] || null;
     }
 
     /**
-     * Check if an image is in the cache
-     * @param {string} src - Image source URL
-     * @returns {boolean} - True if image is cached
+     * ✅ 檢查圖片是否已快取
+     * @param {string} src
+     * @returns {boolean}
      */
     isInCache(src) {
         return !!this.imageCache[src];
     }
 }
 
-// Create singleton instance
+// 🧩 建立單例並導出
 const preloadManager = new PreloadManager();
-
-// Export for use in main script
 export default preloadManager;

@@ -47,9 +47,16 @@
                         <div class="back"><img src="pokers image/Poker Back.jpeg" alt="Poker Back" fetchpriority="high"></div>
                     </div>
                 </div>
+                <div class="audio">
+                     <audio id="start-audio" src="sounds/start-audio.mp3" preload="auto"></audio>
+                    <audio id="draw-audio" src="sounds/draw-audio.mp3" preload="auto"></audio>
+                    <audio id="bg-music" src="sounds/bg-music.mp3" autoplay loop preload="auto"></audio>
+                </div>
                 <div class="button-area">
                     <button id="draw-button">抽牌</button>
                     <button id="end-button">結束遊戲</button>
+                    <button onclick="document.getElementById('bg-music').muted = true">靜音</button>
+                    <button onclick="document.getElementById('bg-music').muted = false">開聲</button>
                 </div>
                 <div id="remaining">剩餘牌數：52 (已抽：0/52)</div>
             </div>

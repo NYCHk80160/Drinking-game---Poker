@@ -7,6 +7,12 @@ body {
     /* Improve text rendering */
     text-rendering: optimizeSpeed;
     -webkit-font-smoothing: antialiased;
+    background-image: url('bg.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+
 }
  .container {
     max-width: 440px;

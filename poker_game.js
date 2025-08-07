@@ -6,13 +6,13 @@ const jokers = [
     { suit: 'Joker', rank: 'Joker2', img: 'Joker 2.jpeg' }
 ];
 
-// Cache DOM elements for better performance
+// 建立快取物件以提升 DOM 查找效能
 const domCache = {};
 
-// Image preloading system
+// 建立圖片快取物件以減少重複載入
 const imageCache = {};
 
-// Preload card images to improve performance
+// 預載撲克牌圖片，讓遊戲過程中更順暢
 function preloadCardImages() {
     const suitMap = {
         '黑桃': 'Spades',
@@ -24,12 +24,12 @@ function preloadCardImages() {
     // Create a queue of images to preload
     const imagesToPreload = [];
     
-    // Add jokers
+    // 儲存鬼牌圖片
     jokers.forEach(joker => {
         imagesToPreload.push(`pokers image/${joker.img}`);
     });
     
-    // Add regular cards (first 10 only for initial loading)
+    // 儲存部分普通牌（最多10張）進行初步載入
     let count = 0;
     for (const suit of suits) {
         for (const rank of ranks) {
@@ -40,7 +40,7 @@ function preloadCardImages() {
         }
     }
     
-    // Preload the images in the background
+    // 利用 requestIdleCallback 在空閒時間載入圖片
     requestIdleCallback(() => {
         imagesToPreload.forEach(src => {
             if (!imageCache[src]) {
@@ -51,7 +51,7 @@ function preloadCardImages() {
         });
     }, { timeout: 1000 });
     
-    // Preload remaining images after a delay
+    // 延遲3秒後載入其餘牌面圖片
     setTimeout(() => {
         requestIdleCallback(() => {
             for (const suit of suits) {
@@ -66,6 +66,15 @@ function preloadCardImages() {
             }
         }, { timeout: 2000 });
     }, 3000);
+}
+
+// 根據 HTML 中的音效 ID 播放對應聲音
+function playSound(id) {
+    const audio = document.getElementById(id);
+    if (audio) {
+        audio.currentTime = 0;
+        audio.play().catch(e => console.log('播放失敗:', e));
+    }
 }
 
 // 定義遊戲規則
@@ -85,7 +94,7 @@ const rules = {
     'K': '自己飲'
 };
 
-// 生成一副牌
+// 根據設定是否包含 Joker 建立完整牌堆
 function createDeck(includeJoker = false) {
     let deck = [];
     suits.forEach(suit => {
@@ -99,7 +108,7 @@ function createDeck(includeJoker = false) {
     return deck;
 }
 
-// 洗牌函數 - Fisher-Yates shuffle algorithm (optimized)
+// 洗牌函數 - 使用 Fisher-Yates 演算法重新排列牌堆
 function shuffleDeck(deck) {
     const newDeck = [...deck]; // Create a copy to avoid modifying the original
     for (let i = newDeck.length - 1; i > 0; i--) {
@@ -116,7 +125,7 @@ let gameDeck = [];
 let MAX_CARDS = 0;
 let drawnCount = 0;
 
-// Initialize deck - moved to a function for better organization
+// 將牌洗好並重設抽牌計數
 function initializeDeck() {
     gameDeck = shuffleDeck(createDeck(includeJoker));
     MAX_CARDS = gameDeck.length;
@@ -124,7 +133,7 @@ function initializeDeck() {
     updateRemainingDisplay();
 }
 
-// Update remaining display - extracted to a function to avoid code duplication
+// 顯示剩下多少牌或已抽幾張
 function updateRemainingDisplay() {
     if (!domCache.remaining) {
         domCache.remaining = document.getElementById('remaining');
@@ -135,19 +144,27 @@ function updateRemainingDisplay() {
         : `剩餘牌數：${gameDeck.length} (已抽：${drawnCount}/${MAX_CARDS})`;
 }
 
-// 抽牌函數 - debounced to prevent rapid clicks
+// 抽牌函數 - 防止連續快速點擊抽牌並觸發動畫與抽牌流程
 let isDrawing = false;
+let isFirstDraw = true;
 function drawCard() {
+    // 第一次抽牌時播放開始音效
+    if (isFirstDraw) {
+        playSound('start-audio');
+        isFirstDraw = false;
+    }
+
     if (isDrawing) return;
-    
     isDrawing = true;
     
+    // 初始化必要 DOM 元件
     if (!domCache.drawBtn) {
         domCache.drawBtn = document.getElementById('draw-button');
         domCache.deck = document.getElementById('deck');
         domCache.cardElement = document.getElementById('card');
     }
     
+    // 禁用抽牌按鈕並開始動畫
     domCache.drawBtn.disabled = true;
     domCache.drawBtn.style.opacity = '0.6';
     
@@ -168,6 +185,7 @@ function drawCard() {
             gameDeck = shuffleDeck(createDeck(includeJoker));
             drawnCount = 0;
             alert(`已抽完 ${MAX_CARDS} 張牌，重新洗牌，遊戲繼續！`);
+           
         }
         if (gameDeck.length === 0) {
             gameDeck = shuffleDeck(createDeck(includeJoker));
@@ -201,6 +219,11 @@ function drawCard() {
 }
 
 // 開始抽牌動畫
+// 當玩家點擊抽牌時，執行視覺效果
+// 1. 抽出最上層卡片（.deck-card）
+// 2. 加入「抽取中」的動畫樣式
+// 3. 移除該卡片並重新排列其餘卡牌
+// 4. 若剩餘卡牌不足3張，則新增卡片保持堆疊視覺效果
 function startDrawAnimation() {
     const deckCards = document.querySelectorAll('.deck-card');
     const topCard = deckCards[0]; // 最上層的牌
@@ -255,6 +278,10 @@ function startDrawAnimation() {
 }
 
 // 使用圖片緩存系統顯示卡片
+// 根據抽到的牌張，顯示對應圖片與遊戲規則
+// 1. 從 imageCache 取出對應圖片，或創建並快取
+// 2. 顯示圖片並播放翻牌音效
+// 3. 顯示對應規則說明，Joker 牌為「免飲一杯」
 function displayCard(card) {
     if (!domCache.cardElement) {
         domCache.cardElement = document.getElementById('card');
@@ -307,6 +334,7 @@ function displayCard(card) {
         // 翻牌動畫
         domCache.cardElement.classList.remove('flipped');
         if (soundEnabled) sounds.flip.play();
+        playSound('draw-audio'); // ✅ 抽牌時播放音效
         
     }, 200);
 
@@ -314,6 +342,10 @@ function displayCard(card) {
 }
 
 // 洗牌動畫
+// 根據抽到的牌張，顯示對應圖片與遊戲規則
+// 1. 從 imageCache 取出對應圖片，或創建並快取
+// 2. 顯示圖片並播放翻牌音效
+// 3. 顯示對應規則說明，Joker 牌為「免飲一杯」
 function shuffleAnimation() {
     if (!domCache.deck) {
         domCache.deck = document.getElementById('deck');
@@ -327,9 +359,13 @@ function shuffleAnimation() {
 }
 
 // 創建牌堆卡片
+// 畫面上預設展示5張堆疊的牌（不是真正的牌堆）
+// 使用 DocumentFragment 先建立卡片提升效能
+// 錯開動畫時間讓入場效果更自然
 function createDeckCards() {
     if (!domCache.deck) {
         domCache.deck = document.getElementById('deck');
+        playSound('start-audio'); // ✅ 加入開始音效
     }
     
     domCache.deck.innerHTML = '';
@@ -375,6 +411,8 @@ const audioFiles = {
 const sounds = {};
 let soundEnabled = true;
 
+// 播放抽牌、翻牌、洗牌與結束音效
+// 提前將音效檔案載入以確保播放順暢
 function preloadSounds() {
     for (const key in audioFiles) {
         const a = new Audio(audioFiles[key]);
@@ -384,6 +422,8 @@ function preloadSounds() {
 }
 
 // 初始化DOM元素緩存
+// 儲存重要的 HTML 元素至 domCache 提高效能
+// 包含抽牌按鈕、音效開關、卡牌顯示區、剩餘牌數等等
 function initializeDomCache() {
     domCache.drawBtn = document.getElementById('draw-button');
     domCache.endBtn = document.getElementById('end-button');
@@ -398,6 +438,11 @@ function initializeDomCache() {
 }
 
 // 頁面載入時執行
+// 1. 初始化 DOM 快取
+// 2. 洗牌＋建立初始視覺牌堆
+// 3. 預載常用卡牌圖片與音效
+// 4. 設定音效開關、結束遊戲確認、Joker 和重複抽牌設定
+// 5. 綁定抽牌按鈕事件
 window.addEventListener('DOMContentLoaded', () => {
     // 初始化DOM緩存
     initializeDomCache();
@@ -438,6 +483,7 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 // 強制重繪函數
+// 有時需要強制重新觸發 CSS 動畫（例如 transition）
 function forceRedraw(element) {
     element.style.transition = 'none';
     void element.offsetHeight;
@@ -445,6 +491,8 @@ function forceRedraw(element) {
 }
 
 // Polyfill for requestIdleCallback
+// 如果瀏覽器不支援 requestIdleCallback，使用 setTimeout 模擬
+// 確保在空閒時間載入圖片等資源，避免影響效能
 if (!window.requestIdleCallback) {
     window.requestIdleCallback = function(callback, options) {
         const start = Date.now();
