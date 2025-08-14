@@ -461,15 +461,34 @@ window.addEventListener('DOMContentLoaded', () => {
     });
     // 背景音樂開關
     if (domCache.bgmToggle) {
+        // 確保 loop 屬性存在（某些瀏覽器移除/複製節點後可能失去）
+        if (domCache.bgMusic) domCache.bgMusic.loop = true;
         domCache.bgmToggle.addEventListener('change', e => {
             const enabled = e.target.checked;
-            if (domCache.bgMusic) {
-                domCache.bgMusic.muted = !enabled;
-                if (enabled) {
-                    domCache.bgMusic.play().catch(()=>{});
-                }
+            const bgm = domCache.bgMusic;
+            if (!bgm) return;
+            if (enabled) {
+                // 從頭開始播放
+                try { bgm.pause(); } catch(_){}
+                bgm.currentTime = 0;
+                bgm.muted = false;
+                // 若使用者之前未與頁面互動，play 可能被瀏覽器阻擋
+                bgm.play().catch(()=>{});
+            } else {
+                // 停止並重置，確保下次開啟也從頭
+                try { bgm.pause(); } catch(_){}
+                bgm.currentTime = 0;
+                bgm.muted = true;
             }
         });
+        // 兼容：如果 loop 被忽略，手動在 ended 事件重播
+        if (domCache.bgMusic) {
+            domCache.bgMusic.addEventListener('ended', function(){
+                if (!domCache.bgmToggle.checked) return; // 已關閉則不重播
+                this.currentTime = 0;
+                this.play().catch(()=>{});
+            });
+        }
     }
     // end-button click (add end sound)
     domCache.endBtn.addEventListener('click', function() {
