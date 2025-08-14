@@ -448,6 +448,12 @@ function initializeDomCache() {
 window.addEventListener('DOMContentLoaded', () => {
     // 初始化DOM緩存
     initializeDomCache();
+    // 預設關閉背景音樂
+    if (domCache.bgMusic) {
+        try { domCache.bgMusic.pause(); } catch(_){}
+        domCache.bgMusic.currentTime = 0;
+        domCache.bgMusic.muted = true;
+    }
     
     // 初始化牌組
     initializeDeck();
