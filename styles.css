@@ -85,11 +85,12 @@ h1 {
 }
 
 .setting-label.sound-label {
-    flex-basis: 100%;
-    justify-content: center;
-    margin-top: 6px;
-    padding-top: 10px;
-    border-top: 1px solid rgba(99, 102, 241, 0.1);
+    /* 放回與其他 checkbox 同一行 */
+    flex-basis: auto;
+    justify-content: flex-start;
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
 }
 
 .card-area {

@@ -435,6 +435,8 @@ function initializeDomCache() {
     domCache.remaining = document.getElementById('remaining');
     domCache.ruleDisplay = document.getElementById('rule-display');
     domCache.soundToggle = document.getElementById('sound-toggle');
+    domCache.bgmToggle = document.getElementById('bgm-toggle');
+    domCache.bgMusic = document.getElementById('bg-music');
 }
 
 // 頁面載入時執行
@@ -457,6 +459,18 @@ window.addEventListener('DOMContentLoaded', () => {
     domCache.soundToggle.addEventListener('change', e => {
         soundEnabled = e.target.checked;
     });
+    // 背景音樂開關
+    if (domCache.bgmToggle) {
+        domCache.bgmToggle.addEventListener('change', e => {
+            const enabled = e.target.checked;
+            if (domCache.bgMusic) {
+                domCache.bgMusic.muted = !enabled;
+                if (enabled) {
+                    domCache.bgMusic.play().catch(()=>{});
+                }
+            }
+        });
+    }
     // end-button click (add end sound)
     domCache.endBtn.addEventListener('click', function() {
         if (soundEnabled) sounds.end.play();

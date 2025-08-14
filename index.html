@@ -6,6 +6,7 @@
     <title>Online drinkinggame poker</title>
     <!-- Preload critical assets -->
     <link rel="preload" href="pokers image/Poker Back.jpeg" as="image">
+    <link rel="sitemap" type="application/xml" title="Sitemap" href="/sitemap.xml">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="styles.css">
@@ -14,6 +15,10 @@
 <body>
     <div class="container">
         <h1>酒game 大排檔</h1>
+        <p style="margin-top:-8px;margin-bottom:12px;font-size:0.9rem;color:#4a5568">
+            <a href="intro.html" style="color:#6366f1;text-decoration:none;margin-right:12px">遊戲介紹</a>
+            <a href="rules.html" style="color:#6366f1;text-decoration:none">規則一覽</a>
+        </p>
         <div class="game-area">
             <div class="info-area">
                 <!-- 遊戲設定區 -->
@@ -26,6 +31,9 @@
                     </label>
                     <label class="setting-label sound-label">
                         <input type="checkbox" id="sound-toggle" checked> 音效開關
+                    </label>
+                    <label class="setting-label">
+                        <input type="checkbox" id="bgm-toggle" checked> 背景音樂
                     </label>
                 </div>
                 <div class="card-area">
@@ -55,8 +63,6 @@
                 <div class="button-area">
                     <button id="draw-button">抽牌</button>
                     <button id="end-button">結束遊戲</button>
-                    <button onclick="document.getElementById('bg-music').muted = true">靜音</button>
-                    <button onclick="document.getElementById('bg-music').muted = false">開聲</button>
                 </div>
                 <div id="remaining">剩餘牌數：52 (已抽：0/52)</div>
             </div>
