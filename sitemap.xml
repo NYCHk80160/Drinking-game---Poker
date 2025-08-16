@@ -3,17 +3,17 @@
 
 <url>
   <loc>https://drinkingamepokder.netlify.app/</loc>
-  <lastmod>2026-08-15</lastmod>
+  <lastmod>2025-08-15</lastmod> <!-- 修正为当前或过去的实际更新日期 -->
 </url>
 
 <url>
   <loc>https://drinkingamepokder.netlify.app/rules.html</loc>
-  <lastmod>2026-08-15</lastmod>
+  <lastmod>2025-08-15</lastmod> <!-- 同上 -->
 </url>
 
 <url>
   <loc>https://drinkingamepokder.netlify.app/intro.html</loc>
-  <lastmod>2026-08-15</lastmod>
+  <lastmod>2025-08-15</lastmod> <!-- 同上 -->
 </url>
 
 </urlset>
