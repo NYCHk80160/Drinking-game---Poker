@@ -1,24 +1,38 @@
+<link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
 <!DOCTYPE html>
 <html lang="zh-HK">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Online drinkinggame poker</title>
-    <!-- Preload critical assets -->
+
+    <!-- 預加載重要圖片資源 -->
     <link rel="preload" href="pokers image/Poker Back.jpeg" as="image">
+
+    <!-- 網站地圖 -->
     <link rel="sitemap" type="application/xml" title="Sitemap" href="/sitemap.xml">
+
+    <!-- Google 字體預連接 -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <!-- 外部樣式表 -->
     <link rel="stylesheet" href="styles.css">
+
+    <!-- 使用 Noto Sans TC 粗體字型 -->
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@700&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="container">
+        <!-- 頁面標題 -->
         <h1>酒game 大排檔</h1>
+
+        <!-- 導航連結 -->
         <p style="margin-top:-8px;margin-bottom:12px;font-size:0.9rem;color:#4a5568">
             <a href="intro.html" style="color:#6366f1;text-decoration:none;margin-right:12px">遊戲介紹</a>
             <a href="rules.html" style="color:#6366f1;text-decoration:none">規則一覽</a>
         </p>
+
         <div class="game-area">
             <div class="info-area">
                 <!-- 遊戲設定區 -->
@@ -36,11 +50,13 @@
                         <input type="checkbox" id="bgm-toggle"> 背景音樂
                     </label>
                 </div>
+
+                <!-- 卡牌區域 -->
                 <div class="card-area">
-                    <!-- 牌堆區域 -->
+                    <!-- 牌堆容器 -->
                     <div class="deck-container">
                         <div class="deck" id="deck">
-                            <!-- 牌堆疊放效果 -->
+                            <!-- 疊放效果的五張牌 -->
                             <div class="deck-card deck-card-1"></div>
                             <div class="deck-card deck-card-2"></div>
                             <div class="deck-card deck-card-3"></div>
@@ -49,26 +65,40 @@
                         </div>
                         <div class="deck-indicator">牌堆</div>
                     </div>
-                    <!-- 抽出的牌 -->
+
+                    <!-- 抽出嘅牌 -->
                     <div class="card flipped" id="card" data-loaded="false">
                         <div class="front"></div>
-                        <div class="back"><img src="pokers image/Poker Back.jpeg" alt="Poker Back" fetchpriority="high"></div>
+                        <div class="back">
+                            <img src="pokers image/Poker Back.jpeg" alt="Poker Back" fetchpriority="high">
+                        </div>
                     </div>
                 </div>
+
+                <!-- 音效與背景音樂 -->
                 <div class="audio">
-                     <audio id="start-audio" src="sounds/start-audio.mp3" preload="auto"></audio>
+                    <audio id="start-audio" src="sounds/start-audio.mp3" preload="auto"></audio>
                     <audio id="draw-audio" src="sounds/draw-audio.mp3" preload="auto"></audio>
                     <audio id="bg-music" src="sounds/bg-music.mp3" loop preload="auto"></audio>
                 </div>
+
+                <!-- 操作按鈕 -->
                 <div class="button-area">
                     <button id="draw-button">抽牌</button>
                     <button id="end-button">結束遊戲</button>
                 </div>
+
+                <!-- 剩餘牌數顯示 -->
                 <div id="remaining">剩餘牌數：52 (已抽：0/52)</div>
             </div>
         </div>
+
+        <!-- 規則顯示區 -->
         <div id="rule-display" class="rule-display">規則：</div>
     </div>
+
+    <!-- 遊戲邏輯腳本 -->
     <script src="poker_game.js" defer></script>
+    <link rel="stylesheet" href="style.css">
 </body>
 </html>

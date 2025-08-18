@@ -1,20 +1,60 @@
+/* =========================
+   酒game 大排檔 主體樣式
+   ========================= */
+
+/* 頁面背景及字型設定 */
+/* 頁面主體預設字型與大小 */
 body {
     margin: 0;
     padding: 0;
-    font-family: 'Noto Sans TC', 'sans-serif';
+    font-family: 'Noto Sans TC', 'Pacifico', cursive, sans-serif;
+    font-size: 20px;
     background: linear-gradient(120deg, #f8fafc 0%, #e0e7ff 100%);
     min-height: 100vh;
-    /* Improve text rendering */
     text-rendering: optimizeSpeed;
     -webkit-font-smoothing: antialiased;
-    background-image: url('bg.png');
+    background-image: url('bgPhoto/bg.png');
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
     background-attachment: fixed;
-
 }
- .container {
+
+/* 規則頁背景 */
+.rules-page {
+    background-image: url('bgPhoto/rules.jpg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+}
+
+/* 介紹頁背景 */
+.intro-page {
+    background-image: url('bgPhoto/intro.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+}
+
+/* 中央矩形區塊 */
+.center-rectangle {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(255,255,255,0.88);
+    box-shadow: 0 8px 32px rgba(60, 60, 120, 0.22);
+    border-radius: 20px;
+    padding: 40px 32px;
+    max-width: 600px;
+    width: 90vw;
+    z-index: 2;
+}
+
+/* 主要內容容器 */
+.container {
     max-width: 440px;
     margin: 30px auto;
     background: #fff;
@@ -26,14 +66,65 @@ body {
     align-items: center;
 }
 
+/* 標題 h1 用 Pacifico，最大字體 */
 h1 {
-    font-size: 2.2rem;
-    color: #3b3b6d;
+    font-family: 'Pacifico', cursive;
+    font-size: 2.5rem;
+    color: #6366f1;
+    letter-spacing: 2px;
     margin-bottom: 24px;
-    letter-spacing: 1.5px;
-    text-shadow: 0 2px 8px rgba(224, 231, 255, 0.3);
 }
- .game-area {
+
+/* 副標題 h2 用 Pacifico，次大字體 */
+h2 {
+    font-family: 'Pacifico', cursive;
+    font-weight: 700;
+    color: #3b3b6d;
+    font-size: 1.6rem;
+    margin-top: 32px;
+    margin-bottom: 18px;
+}
+
+/* 重要文字高亮 */
+.important {
+    font-family: 'Roboto', sans-serif;
+    font-size: 1.2rem;
+    color: #ef4444;
+    font-weight: bold;
+    background: linear-gradient(90deg, #fbbf24 0%, #f87171 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* 正文段落用 Noto Sans TC，適中字體 */
+p {
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 1.1rem;
+    color: #222;
+    margin-bottom: 16px;
+}
+
+/* 清單用 Noto Sans TC，正常大小 */
+ul, li {
+    font-family: 'Noto Sans TC', sans-serif;
+    font-size: 1rem;
+    color: #444;
+    margin-bottom: 8px;
+}
+
+/* 頁腳用 Roboto，最小字體 */
+footer {
+    font-family: 'Roboto', sans-serif;
+    font-size: 0.9rem;
+    color: #64748b;
+    margin-top: 40px;
+    text-align: center;
+}
+/* =========================
+   遊戲區域相關樣式
+   ========================= */
+
+.game-area {
     display: flex;
     flex-direction: column;
     gap: 20px;
@@ -92,6 +183,10 @@ h1 {
     padding-top: 0;
     border-top: none;
 }
+
+/* =========================
+   卡牌區域樣式
+   ========================= */
 
 .card-area {
     display: flex;
@@ -179,7 +274,10 @@ h1 {
     border-left: 4px solid #6366f1;
 }
 
-/* 牌堆樣式 */
+/* =========================
+   牌堆樣式與動畫
+   ========================= */
+
 .deck-container {
     position: relative;
     width: 100px;
@@ -219,6 +317,7 @@ h1 {
     transition: all 0.3s ease;
 }
 
+/* 牌堆層疊效果 */
 .deck-card-1 { top: 0px; left: 0px; z-index: 5; }
 .deck-card-2 { top: -2px; left: 1px; z-index: 4; }
 .deck-card-3 { top: -4px; left: 2px; z-index: 3; }
@@ -331,14 +430,12 @@ h1 {
 .deck.reduced .deck-card-4 { top: -5px; }
 .deck.reduced .deck-card-5 { top: -7px; }
 
-/* 牌堆逐漸減少效果 - 剩餘4張牌時 */
+/* 牌堆逐漸減少效果 */
 .deck.cards-4 .deck-card-5 {
     opacity: 0;
     transform: scale(0.8);
     transition: opacity 0.5s ease, transform 0.5s ease;
 }
-
-/* 牌堆逐漸減少效果 - 剩餘3張牌時 */
 .deck.cards-3 .deck-card-4,
 .deck.cards-3 .deck-card-5 {
     opacity: 0;
@@ -348,8 +445,6 @@ h1 {
 .deck.cards-3 .deck-card-1 { top: 2px; }
 .deck.cards-3 .deck-card-2 { top: 0px; }
 .deck.cards-3 .deck-card-3 { top: -2px; }
-
-/* 牌堆逐漸減少效果 - 剩餘2張牌時 */
 .deck.cards-2 .deck-card-3,
 .deck.cards-2 .deck-card-4,
 .deck.cards-2 .deck-card-5 {
@@ -359,8 +454,6 @@ h1 {
 }
 .deck.cards-2 .deck-card-1 { top: 3px; }
 .deck.cards-2 .deck-card-2 { top: 1px; }
-
-/* 牌堆逐漸減少效果 - 剩餘1張牌時 */
 .deck.cards-1 .deck-card-2,
 .deck.cards-1 .deck-card-3,
 .deck.cards-1 .deck-card-4,
@@ -370,8 +463,6 @@ h1 {
     transition: opacity 0.5s ease, transform 0.5s ease;
 }
 .deck.cards-1 .deck-card-1 { top: 4px; }
-
-/* 牌堆空了 - 0張牌時 */
 .deck.cards-0 .deck-card-1,
 .deck.cards-0 .deck-card-2,
 .deck.cards-0 .deck-card-3,
@@ -381,6 +472,11 @@ h1 {
     transform: scale(0.6);
     transition: opacity 0.8s ease, transform 0.8s ease;
 }
+
+/* =========================
+   卡片翻牌動畫
+   ========================= */
+
 .card {
     width: 100px;
     height: 140px;
@@ -425,6 +521,7 @@ h1 {
     box-shadow: 0 8px 32px rgba(60, 60, 120, 0.22);
     transform: scale(1.02) translateY(-2px);
 }
+
 .front, .back {
     position: absolute;
     width: 100%;
@@ -471,7 +568,7 @@ h1 {
     box-shadow: 0 2px 8px rgba(60,60,120,0.12);
 }
 
-/* 翻牌效果 - 適用於所有卡片 */
+/* 卡片翻牌效果 */
 .card.flipped .front {
     transform: rotateY(180deg);
 }
@@ -480,7 +577,7 @@ h1 {
     transform: rotateY(0deg);
 }
 
-/* 翻牌動畫加強效果 */
+/* 卡片翻牌動畫加強效果 */
 .card.flipping {
     animation: cardFlip 0.8s ease-in-out;
 }
