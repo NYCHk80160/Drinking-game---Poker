@@ -1,10 +1,18 @@
+// ==========================
+// 1. 基本資料與常數定義
+// ==========================
+
 // 定義花色和點數
-const suits = ['黑桃', '紅心', '鑽石', '梅花'];
-const ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+const suits = ['黑桃', '紅心', '鑽石', '梅花']; // 撲克牌四種花色
+const ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K']; // 撲克牌點數
 const jokers = [
-    { suit: 'Joker', rank: 'Joker1', img: 'Joker 1.jpeg' },
-    { suit: 'Joker', rank: 'Joker2', img: 'Joker 2.jpeg' }
+    { suit: 'Joker', rank: 'Joker1', img: 'Joker 1.jpeg' }, // 第一張鬼牌
+    { suit: 'Joker', rank: 'Joker2', img: 'Joker 2.jpeg' }  // 第二張鬼牌
 ];
+
+// ==========================
+// 2. 快取物件與圖片快取
+// ==========================
 
 // 建立快取物件以提升 DOM 查找效能
 const domCache = {};
@@ -12,8 +20,13 @@ const domCache = {};
 // 建立圖片快取物件以減少重複載入
 const imageCache = {};
 
+// ==========================
+// 3. 預載圖片
+// ==========================
+
 // 預載撲克牌圖片，讓遊戲過程中更順暢
 function preloadCardImages() {
+    // suitMap 用來對應中文花色與英文檔名
     const suitMap = {
         '黑桃': 'Spades',
         '紅心': 'Heart',
@@ -21,7 +34,7 @@ function preloadCardImages() {
         '梅花': 'Clubs'
     };
     
-    // Create a queue of images to preload
+    // 建立預載圖片的佇列
     const imagesToPreload = [];
     
     // 儲存鬼牌圖片
@@ -33,7 +46,7 @@ function preloadCardImages() {
     let count = 0;
     for (const suit of suits) {
         for (const rank of ranks) {
-            if (count < 10) { // Limit initial preloading
+            if (count < 10) { // 只先載入10張
                 imagesToPreload.push(`pokers image/${suitMap[suit]} ${rank}.jpeg`);
                 count++;
             }
@@ -68,6 +81,10 @@ function preloadCardImages() {
     }, 3000);
 }
 
+// ==========================
+// 4. 音效播放
+// ==========================
+
 // 根據 HTML 中的音效 ID 播放對應聲音
 function playSound(id) {
     const audio = document.getElementById(id);
@@ -77,7 +94,11 @@ function playSound(id) {
     }
 }
 
-// 定義遊戲規則
+// ==========================
+// 5. 遊戲規則定義
+// ==========================
+
+// 定義遊戲規則（以點數為 key）
 const rules = {
     'A': '指個一人飲',
     '2': '陪飲員 (無論邊個玩家要飲，陪飲員都要同佢一齊飲，直到下一個人抽到2為止)',
@@ -93,6 +114,10 @@ const rules = {
     'Q': '下家飲',
     'K': '自己飲'
 };
+
+// ==========================
+// 6. 牌堆建立與洗牌
+// ==========================
 
 // 根據設定是否包含 Joker 建立完整牌堆
 function createDeck(includeJoker = false) {
@@ -110,7 +135,7 @@ function createDeck(includeJoker = false) {
 
 // 洗牌函數 - 使用 Fisher-Yates 演算法重新排列牌堆
 function shuffleDeck(deck) {
-    const newDeck = [...deck]; // Create a copy to avoid modifying the original
+    const newDeck = [...deck]; // 複製一份避免改動原本的 deck
     for (let i = newDeck.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [newDeck[i], newDeck[j]] = [newDeck[j], newDeck[i]];
@@ -118,12 +143,19 @@ function shuffleDeck(deck) {
     return newDeck;
 }
 
-// 初始化牌組
-let includeJoker = false;
-let allowRepeat = false;
-let gameDeck = [];
-let MAX_CARDS = 0;
-let drawnCount = 0;
+// ==========================
+// 7. 遊戲狀態變數
+// ==========================
+
+let includeJoker = false; // 是否包含鬼牌
+let allowRepeat = false;  // 是否允許重複抽牌
+let gameDeck = [];        // 遊戲中的牌堆
+let MAX_CARDS = 0;        // 牌堆總數
+let drawnCount = 0;       // 已抽牌數
+
+// ==========================
+// 8. 牌堆初始化與剩餘顯示
+// ==========================
 
 // 將牌洗好並重設抽牌計數
 function initializeDeck() {
@@ -138,11 +170,14 @@ function updateRemainingDisplay() {
     if (!domCache.remaining) {
         domCache.remaining = document.getElementById('remaining');
     }
-    
     domCache.remaining.textContent = allowRepeat
         ? `已抽：${drawnCount}`
         : `剩餘牌數：${gameDeck.length} (已抽：${drawnCount}/${MAX_CARDS})`;
 }
+
+// ==========================
+// 9. 抽牌流程與動畫
+// ==========================
 
 // 抽牌函數 - 防止連續快速點擊抽牌並觸發動畫與抽牌流程
 let isDrawing = false;
@@ -185,7 +220,6 @@ function drawCard() {
             gameDeck = shuffleDeck(createDeck(includeJoker));
             drawnCount = 0;
             alert(`已抽完 ${MAX_CARDS} 張牌，重新洗牌，遊戲繼續！`);
-           
         }
         if (gameDeck.length === 0) {
             gameDeck = shuffleDeck(createDeck(includeJoker));
@@ -218,12 +252,11 @@ function drawCard() {
     }, 600);
 }
 
-// 開始抽牌動畫
+// ==========================
+// 10. 抽牌動畫
+// ==========================
+
 // 當玩家點擊抽牌時，執行視覺效果
-// 1. 抽出最上層卡片（.deck-card）
-// 2. 加入「抽取中」的動畫樣式
-// 3. 移除該卡片並重新排列其餘卡牌
-// 4. 若剩餘卡牌不足3張，則新增卡片保持堆疊視覺效果
 function startDrawAnimation() {
     const deckCards = document.querySelectorAll('.deck-card');
     const topCard = deckCards[0]; // 最上層的牌
@@ -277,11 +310,11 @@ function startDrawAnimation() {
     }
 }
 
+// ==========================
+// 11. 顯示卡片與規則
+// ==========================
+
 // 使用圖片緩存系統顯示卡片
-// 根據抽到的牌張，顯示對應圖片與遊戲規則
-// 1. 從 imageCache 取出對應圖片，或創建並快取
-// 2. 顯示圖片並播放翻牌音效
-// 3. 顯示對應規則說明，Joker 牌為「免飲一杯」
 function displayCard(card) {
     if (!domCache.cardElement) {
         domCache.cardElement = document.getElementById('card');
@@ -339,13 +372,35 @@ function displayCard(card) {
     }, 200);
 
     domCache.ruleDisplay.textContent = `規則：${rule}`;
+
+    if (rank === 'Joker1' || rank === 'Joker2') rule = '免飲一杯 🍀';
+    if (rank === 'K') rule += '（飲啦飲啦！）';
+
+    // 隨機顯示一句香港口語和 emoji
+    const hkSlang = [
+      "飲啦飲啦！", 
+      "唔好縮！", 
+      "快啲啦！", 
+      "你都幾伏喎！", 
+      "今晚唔醉唔歸！", 
+      "大佬，頂住先！", 
+      "飲多啲，身體好！", 
+      "唔好扮嘢！", 
+      "有冇搞錯呀？", 
+      "咁都得？"
+    ];
+    const hkEmojis = ["🍻", "🥢", "🍲", "🧋", "🀄️", "🥤"];
+
+    let randomSlang = hkSlang[Math.floor(Math.random() * hkSlang.length)];
+    let randomEmoji = hkEmojis[Math.floor(Math.random() * hkEmojis.length)];
+    domCache.ruleDisplay.textContent = `規則：${rule}　${randomSlang}`;
 }
 
+// ==========================
+// 12. 洗牌動畫
+// ==========================
+
 // 洗牌動畫
-// 根據抽到的牌張，顯示對應圖片與遊戲規則
-// 1. 從 imageCache 取出對應圖片，或創建並快取
-// 2. 顯示圖片並播放翻牌音效
-// 3. 顯示對應規則說明，Joker 牌為「免飲一杯」
 function shuffleAnimation() {
     if (!domCache.deck) {
         domCache.deck = document.getElementById('deck');
@@ -358,10 +413,11 @@ function shuffleAnimation() {
     }, 850);
 }
 
+// ==========================
+// 13. 建立視覺牌堆
+// ==========================
+
 // 創建牌堆卡片
-// 畫面上預設展示5張堆疊的牌（不是真正的牌堆）
-// 使用 DocumentFragment 先建立卡片提升效能
-// 錯開動畫時間讓入場效果更自然
 function createDeckCards() {
     if (!domCache.deck) {
         domCache.deck = document.getElementById('deck');
@@ -401,6 +457,10 @@ function createDeckCards() {
     }
 }
 
+// ==========================
+// 14. 音效預載
+// ==========================
+
 // Audio effects setup
 const audioFiles = {
     shuffle: 'sounds/shuffle.mp3',
@@ -412,7 +472,6 @@ const sounds = {};
 let soundEnabled = true;
 
 // 播放抽牌、翻牌、洗牌與結束音效
-// 提前將音效檔案載入以確保播放順暢
 function preloadSounds() {
     for (const key in audioFiles) {
         const a = new Audio(audioFiles[key]);
@@ -421,9 +480,11 @@ function preloadSounds() {
     }
 }
 
+// ==========================
+// 15. DOM 快取初始化
+// ==========================
+
 // 初始化DOM元素緩存
-// 儲存重要的 HTML 元素至 domCache 提高效能
-// 包含抽牌按鈕、音效開關、卡牌顯示區、剩餘牌數等等
 function initializeDomCache() {
     domCache.drawBtn = document.getElementById('draw-button');
     domCache.endBtn = document.getElementById('end-button');
@@ -439,12 +500,10 @@ function initializeDomCache() {
     domCache.bgMusic = document.getElementById('bg-music');
 }
 
-// 頁面載入時執行
-// 1. 初始化 DOM 快取
-// 2. 洗牌＋建立初始視覺牌堆
-// 3. 預載常用卡牌圖片與音效
-// 4. 設定音效開關、結束遊戲確認、Joker 和重複抽牌設定
-// 5. 綁定抽牌按鈕事件
+// ==========================
+// 16. 頁面載入初始化
+// ==========================
+
 window.addEventListener('DOMContentLoaded', () => {
     // 初始化DOM緩存
     initializeDomCache();
@@ -521,8 +580,11 @@ window.addEventListener('DOMContentLoaded', () => {
     domCache.drawBtn.addEventListener('click', drawCard);
 });
 
+// ==========================
+// 17. 其他輔助函數
+// ==========================
+
 // 強制重繪函數
-// 有時需要強制重新觸發 CSS 動畫（例如 transition）
 function forceRedraw(element) {
     element.style.transition = 'none';
     void element.offsetHeight;
@@ -530,8 +592,6 @@ function forceRedraw(element) {
 }
 
 // Polyfill for requestIdleCallback
-// 如果瀏覽器不支援 requestIdleCallback，使用 setTimeout 模擬
-// 確保在空閒時間載入圖片等資源，避免影響效能
 if (!window.requestIdleCallback) {
     window.requestIdleCallback = function(callback, options) {
         const start = Date.now();
@@ -545,3 +605,23 @@ if (!window.requestIdleCallback) {
         }, options?.timeout || 1);
     };
 }
+
+// 設定標籤閃爍效果
+function flashSettingLabel(label) {
+  label.classList.add('flash');
+  setTimeout(() => label.classList.remove('flash'), 500);
+}
+
+// Joker 設定變更時閃爍提示
+domCache.jokerSetting.addEventListener('change', function(e) {
+  includeJoker = e.target.checked;
+  initializeDeck();
+  createDeckCards();
+  flashSettingLabel(this.parentElement);
+});
+
+// 圖片載入失敗時顯示背面
+imgEl.onerror = function() {
+  imgEl.src = 'pokers image/Poker Back.jpeg';
+  imgEl.alt = '圖片載入失敗';
+};
